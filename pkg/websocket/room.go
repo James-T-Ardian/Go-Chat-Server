@@ -27,7 +27,7 @@ func NewRoom(roomName string) *Room {
 func (room *Room) StartRoom() {
 	loc, err := time.LoadLocation("America/Los_Angeles")
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 
 	dt := time.Now().In(loc).Format("01-02-2006 15:04:05")
@@ -38,13 +38,13 @@ func (room *Room) StartRoom() {
 			room.clients[currClient] = true
 			log.Println("Size of Connection Pool: ", len(room.clients))
 			for client := range room.clients {
-				client.conn.WriteJSON(Message{Type: ServerMessage, Timestamp: dt, Body: fmt.Sprintf("%s has joined...", currClient.Username), Target: room.RoomName})
+				client.conn.WriteJSON(Message{Action: JoinRoom, Timestamp: dt, Body: fmt.Sprintf("%s has joined...", currClient.Username), Target: room.RoomName, Sender: currClient.Username})
 			}
 		case currClient := <-room.unregister:
 			delete(room.clients, currClient)
 			log.Println("Size of Connection Pool: ", len(room.clients))
 			for client := range room.clients {
-				client.conn.WriteJSON(Message{Type: ServerMessage, Timestamp: dt, Body: fmt.Sprintf("%s has left...", currClient.Username), Target: room.RoomName})
+				client.conn.WriteJSON(Message{Action: LeaveRoom, Timestamp: dt, Body: fmt.Sprintf("%s has left...", currClient.Username), Target: room.RoomName, Sender: currClient.Username})
 			}
 		case message := <-room.broadcast:
 			for client := range room.clients {
