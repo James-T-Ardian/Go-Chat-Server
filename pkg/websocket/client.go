@@ -30,14 +30,16 @@ func (c *Client) Read() {
 	for {
 		_, jsonMessage, err := c.conn.ReadMessage()
 		if err != nil {
-			log.Println(err)
+			if websocket.IsUnexpectedCloseError(err) {
+				log.Println("Unexpected close error: ", err)
+			}
+			break
 		}
 
 		var msg Message
 		if err := json.Unmarshal(jsonMessage, &msg); err != nil {
 			log.Print(err)
 		}
-
 		c.handleMessage(msg)
 	}
 }
