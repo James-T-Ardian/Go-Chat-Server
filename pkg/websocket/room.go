@@ -8,23 +8,23 @@ import (
 
 type Room struct {
 	RoomName   string
-	register   chan *Client
-	unregister chan *Client
-	clients    map[*Client]bool
+	register   chan *client
+	unregister chan *client
+	clients    map[*client]bool
 	broadcast  chan Message
 }
 
-func NewRoom(roomName string) *Room {
+func newRoom(roomName string) *Room {
 	return &Room{
 		RoomName:   roomName,
-		register:   make(chan *Client),
-		unregister: make(chan *Client),
-		clients:    make(map[*Client]bool),
+		register:   make(chan *client),
+		unregister: make(chan *client),
+		clients:    make(map[*client]bool),
 		broadcast:  make(chan Message),
 	}
 }
 
-func (room *Room) StartRoom() {
+func (room *Room) runRoom() {
 	loc, err := time.LoadLocation("America/Los_Angeles")
 	if err != nil {
 		log.Println(err)

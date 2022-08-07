@@ -7,21 +7,22 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-type Client struct {
+type client struct {
 	Username string
 	conn     *websocket.Conn
 	room     *Room
+	hub      *Hub
 }
 
-func NewClient(username string, ws *websocket.Conn, room *Room) *Client {
-	return &Client{
+func newClient(username string, ws *websocket.Conn, hub *Hub) *client {
+	return &client{
 		Username: username,
 		conn:     ws,
-		room:     room,
+		hub:      hub,
 	}
 }
 
-func (c *Client) Read() {
+func (c *client) Read() {
 	defer func() {
 		c.room.unregister <- c
 		c.conn.Close()
@@ -44,15 +45,26 @@ func (c *Client) Read() {
 	}
 }
 
-func (c *Client) handleMessage(msg Message) {
+func (c *client) handleMessage(msg Message) {
 	switch msg.Action {
 	case SendMessage:
 		c.room.broadcast <- msg
 	case JoinRoom:
-		c.room.register <- c
+		c.joinRoom(msg.Target)
 	case LeaveRoom:
 		c.room.unregister <- c
 	default:
-		log.Println("Invalid message 'action' field by client: ", c.Username)
+		log.Println("Invalid message 'action' field: ", msg.Action, ", by client: ", c.Username)
+	}
+}
+
+func (c *client) joinRoom(roomName string) {
+	room := c.hub.findRoomByName((roomName))
+
+	if room == nil {
+		c.hub.registerRoom(newRoom(roomName))
+	} else if c.room != room {
+		c.room = room
+		c.room.register <- c
 	}
 }
