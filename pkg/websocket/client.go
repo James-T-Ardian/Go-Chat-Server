@@ -22,7 +22,7 @@ func newClient(username string, ws *websocket.Conn, hub *Hub) *client {
 	}
 }
 
-func (c *client) Read() {
+func (c *client) read() {
 	defer func() {
 		c.room.unregister <- c
 		c.conn.Close()
