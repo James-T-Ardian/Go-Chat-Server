@@ -68,3 +68,8 @@ func (c *client) joinRoom(roomName string) {
 		c.room.register <- c
 	}
 }
+
+func (c *client) leaveRoom(roomName string) {
+	c.room.unregister <- c
+	c.room = nil
+}
