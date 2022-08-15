@@ -1,9 +1,13 @@
 package websocket
 
 import (
+	"crypto/rand"
 	"encoding/json"
+	"io"
 	"log"
+	"strings"
 
+	petname "github.com/dustinkirkland/golang-petname"
 	"github.com/gorilla/websocket"
 )
 
@@ -20,6 +24,33 @@ func newClient(username string, ws *websocket.Conn, hub *Hub) *client {
 		conn:     ws,
 		hub:      hub,
 	}
+}
+
+// Name will be in the form of "adjective-name-pseudoRandom6DigitNumber"
+func createPseudoRandomName() string {
+	name := petname.Generate(2, "-")
+	numberTag := pseudoRandomNumberString(6)
+	return name + "-" + numberTag
+}
+
+func pseudoRandomNumberString(max int) string {
+	buff := make([]byte, max)
+	n, err := io.ReadAtLeast(rand.Reader, buff, max)
+	if n != max {
+		log.Println("Random number for client name failed to be generated. Will return all zeroes. Err: ", err)
+		zeroes := make([]string, max)
+		for i := 0; i < max; i++ {
+			zeroes[i] = "0"
+		}
+		return strings.Join(zeroes, "")
+	}
+
+	table := []byte{'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'}
+
+	for i := 0; i < len(buff); i++ {
+		buff[i] = table[int(buff[i])%len(table)]
+	}
+	return string(buff)
 }
 
 func (c *client) read() {
@@ -52,7 +83,7 @@ func (c *client) handleMessage(msg Message) {
 	case JoinRoom:
 		c.joinRoom(msg.Target)
 	case LeaveRoom:
-		c.room.unregister <- c
+		c.leaveRoom(msg.Target)
 	default:
 		log.Println("Invalid message 'action' field: ", msg.Action, ", by client: ", c.Username)
 	}
@@ -62,7 +93,9 @@ func (c *client) joinRoom(roomName string) {
 	room := c.hub.findRoomByName((roomName))
 
 	if room == nil {
-		c.hub.registerRoom(newRoom(roomName))
+		createdRoom := *(newRoom(roomName))
+		go createdRoom.runRoom()
+		c.hub.registerRoom(&createdRoom)
 	} else if c.room != room {
 		c.room = room
 		c.room.register <- c

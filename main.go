@@ -15,16 +15,13 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
-var defaultRoom = goChatWS.NewRoom("Default")
-
-func serveWs(w http.ResponseWriter, r *http.Request) {
+func wsHandler(w http.ResponseWriter, r *http.Request) {
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
 	}
 
-	client := goChatWS.NewClient("Test User", ws, defaultRoom)
-	client.Read()
+	goChatWS.NewHub().ServeWSHub(ws)
 }
 
 func setupRoutes() {
@@ -32,11 +29,10 @@ func setupRoutes() {
 		fmt.Fprintf(w, "Simple Server")
 	})
 
-	http.HandleFunc("/ws", serveWs)
+	http.HandleFunc("/ws", wsHandler)
 }
 
 func main() {
-	go defaultRoom.StartRoom()
 	setupRoutes()
 	http.ListenAndServe(":8080", nil)
 }
