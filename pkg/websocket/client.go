@@ -84,6 +84,8 @@ func (c *client) handleMessage(msg Message) {
 		c.joinRoom(msg.Target)
 	case LeaveRoom:
 		c.leaveRoom(msg.Target)
+	case GetCurrentUsername:
+		c.conn.WriteJSON(Message{Action: GetCurrentUsername, Timestamp: getTimeStamp(), Body: c.Username, Target: c.Username})
 	default:
 		log.Println("Invalid message 'action' field: ", msg.Action, ", by client: ", c.Username)
 	}

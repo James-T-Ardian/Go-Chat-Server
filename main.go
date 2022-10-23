@@ -15,13 +15,15 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
+var currentHub = goChatWS.NewHub()
+
 func wsHandler(w http.ResponseWriter, r *http.Request) {
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
 	}
 
-	goChatWS.NewHub().ServeWSHub(ws)
+	currentHub.ServeWSHub(ws)
 }
 
 func setupRoutes() {
