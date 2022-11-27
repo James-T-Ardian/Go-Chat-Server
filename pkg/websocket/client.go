@@ -79,6 +79,7 @@ func (c *client) read() {
 func (c *client) handleMessage(msg Message) {
 	switch msg.Action {
 	case SendMessage:
+		msg.Timestamp = getTimeStamp()
 		c.room.broadcast <- msg
 	case JoinRoom:
 		c.joinRoom(msg.Target)
