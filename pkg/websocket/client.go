@@ -55,7 +55,9 @@ func pseudoRandomNumberString(max int) string {
 
 func (c *client) read() {
 	defer func() {
-		c.room.unregister <- c
+		if c.room != nil {
+			c.room.unregister <- c
+		}
 		c.conn.Close()
 	}()
 
@@ -99,7 +101,10 @@ func (c *client) joinRoom(roomName string) {
 		createdRoom := *(newRoom(roomName))
 		go createdRoom.runRoom()
 		c.hub.registerRoom(&createdRoom)
-	} else if c.room != room {
+		room := c.hub.findRoomByName((roomName))
+		c.room = room
+		c.room.register <- c
+	} else if c.room == nil || c.room.RoomName != room.RoomName {
 		c.room = room
 		c.room.register <- c
 	}
